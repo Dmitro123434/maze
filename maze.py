@@ -21,10 +21,10 @@ clock = time.Clock()
 bg = image.load('background.jpg')
 bg = transform.scale(bg,(WIDTH,HEIGHT))
 
-player_img = image.load("Pikachu.png")
+player_img = image.load("hero_01.png")
 cyborg_img = image.load("pngwing.com.png")
-wall_img = image.load("StoneBlock.png")
-gold_img = image.load("treasure.png")
+wall_img = image.load("transparent-bg-tiles (2).png")
+gold_img = image.load("transparent-bg-tiles (4).png")
 all_sprites = sprite.Group()
 
 class Sprite(sprite.Sprite):
