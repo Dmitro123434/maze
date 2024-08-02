@@ -1,5 +1,6 @@
 from random import choice
 from pygame import *
+import pygame_menu
 
 init()
 font.init()
@@ -31,7 +32,7 @@ class Sprite(sprite.Sprite):
     def __init__(self, sprite_img, width, height, x, y):
         super().__init__()
         self.image = transform.scale(sprite_img, (width, height))
-        self.rect = self.image.get_rect()
+        self.rect   = Rect(x,y, width, height)
         self.rect.x = x
         self.rect.y = y
         self.mask = mask.from_surface(self.image)
@@ -42,18 +43,23 @@ class Player(Sprite):
         super().__init__(sprite_img, width, height, x, y)
         self.hp = 100
         self.speed = 2
+        self.dir = "r"
 
     def update(self):
         key_pressed = key.get_pressed()
         old_pos = self.rect.x, self.rect.y
         if key_pressed[K_w] and self.rect.y > 0:
             self.rect.y -= self.speed
+            self.dir = "u"
         if key_pressed[K_s] and self.rect.bottom < HEIGHT:
             self.rect.y += self.speed
+            self.dir = "d"
         if key_pressed[K_a] and self.rect.x > 0:
             self.rect.x -= self.speed
+            self.dir = "l"
         if key_pressed[K_d] and self.rect.right < WIDTH:
             self.rect.x += self.speed
+            self.dir = "r"
         
         collide_list = sprite.spritecollide(self, walls, False, sprite.collide_mask) 
         if len(collide_list) > 0:
@@ -62,6 +68,9 @@ class Player(Sprite):
         enemy_collide = sprite.spritecollide(self, enemys, False, sprite.collide_mask)
         if len(enemy_collide) > 0:
             self.hp -= 100
+
+    def fire(self):
+        bullet = Bullet(self.rect.centerx, self.rect.centery +15, self)      
 
 
 class Enemy(Sprite):
@@ -88,7 +97,31 @@ class Enemy(Sprite):
             self.rect.x, self.rect.y = old_pos #якщо торкнуися стіни - крок назад
             self.dir = choice(self.dir_list)
 
+bullets = sprite.Group()
+class Bullet(Sprite):
+    def __init__(self, x, y, player):
+        img = Surface((10,10))
+        img.fill((255,0,0))
+        super().__init__(img, 10, 10, x, y)
+        self.rect.centerx = x
+        self.rect.bottom = y
+        self.damage = 100
+        self.speed = 10
+        bullets.add(self)
+        self.dir = player.dir
+    def update(self):
+        if self.rect.bottom < 0:
+            self.kill()
 
+
+        if self.dir == "r":
+            self.rect.x += self.speed
+        elif self.dir == "l":
+            self.rect.x -= self.speed
+        elif self.dir == "u":
+            self.rect.y -= self.speed
+        elif self.dir == "d":
+            self.rect.y += self.speed
         
 
 
@@ -119,6 +152,34 @@ with open("map.txt", "r") as f:
 
 
 
+
+def set_difficulty(selected, value):
+    """
+    Set the difficulty of the game.
+    """
+    print(f'Set difficulty to {selected[0]} ({value})')
+
+def start_the_game():
+    # Do the job here !
+    global run
+    run = True
+    menu.disable()
+
+
+#створюємо власну тему - копію стандартної
+mytheme = pygame_menu.themes.THEME_DARK.copy()
+# колір верхньої панелі (останній параметр - 0 робить її прозорою)
+mytheme.title_background_color=(255, 255, 255, 0) 
+#задаємо картинку для фону
+
+menu = pygame_menu.Menu('Fight maze', WIDTH, HEIGHT,
+                       theme=mytheme)   
+
+user_name = menu.add.text_input("Ім'я :", default='Анонім')
+menu.add.button('Play', start_the_game)
+menu.add.button('Quit', pygame_menu.events.EXIT)
+menu.mainloop(window)
+
 run = True
 finish = False
 
@@ -126,16 +187,22 @@ while run:
     for e in event.get():
         if e.type == QUIT:
             run = False
+        if e. type == KEYDOWN:
+            if e.key == K_ESCAPE:
+                menu.enable()
+                menu.mainloop(window)
+            if e.key == K_q:
+                player.fire()
     window.fill((252, 199, 50))
     if player.hp <= 0:
         finish = True
-    
+
     if sprite.collide_mask(player, gold):
         finish = True
         game_over_text = font1.render("YOU WIN", True, (0, 150, 0))
 
     all_sprites.draw(window)
-    if not finish:
+    if not finish: 
         all_sprites.update()
     if finish:
         window.blit(game_over_text, (300, 300))
