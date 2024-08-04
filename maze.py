@@ -22,8 +22,8 @@ clock = time.Clock()
 bg = image.load('background.jpg')
 bg = transform.scale(bg,(WIDTH,HEIGHT))
 
-player_img = image.load("hero_01.png")
-cyborg_img = image.load("pngwing.com.png")
+player_img = image.load("pngwing.com.png")
+cyborg_img = image.load("hero_01.png")
 wall_img = image.load("transparent-bg-tiles (2).png")
 gold_img = image.load("transparent-bg-tiles (4).png")
 all_sprites = sprite.Group()
@@ -44,6 +44,10 @@ class Player(Sprite):
         self.hp = 100
         self.speed = 2
         self.dir = "r"
+        self.left = transform.flip(self.image,True,False)
+        self.right = self.image
+        self.up = transform.rotate(self.right,90)
+        self.down = transform.rotate(self.right,-90)
 
     def update(self):
         key_pressed = key.get_pressed()
@@ -51,15 +55,20 @@ class Player(Sprite):
         if key_pressed[K_w] and self.rect.y > 0:
             self.rect.y -= self.speed
             self.dir = "u"
+            self.image = self.up
         if key_pressed[K_s] and self.rect.bottom < HEIGHT:
             self.rect.y += self.speed
             self.dir = "d"
+            self.image = self.down
+            
         if key_pressed[K_a] and self.rect.x > 0:
             self.rect.x -= self.speed
             self.dir = "l"
+            self.image = self.left
         if key_pressed[K_d] and self.rect.right < WIDTH:
             self.rect.x += self.speed
             self.dir = "r"
+            self.image = self.right
         
         collide_list = sprite.spritecollide(self, walls, False, sprite.collide_mask) 
         if len(collide_list) > 0:
@@ -112,8 +121,6 @@ class Bullet(Sprite):
     def update(self):
         if self.rect.bottom < 0:
             self.kill()
-
-
         if self.dir == "r":
             self.rect.x += self.speed
         elif self.dir == "l":
@@ -191,8 +198,8 @@ while run:
             if e.key == K_ESCAPE:
                 menu.enable()
                 menu.mainloop(window)
-            if e.key == K_q:
-                player.fire()
+        if e.type == MOUSEBUTTONDOWN:
+            player.fire()
     window.fill((252, 199, 50))
     if player.hp <= 0:
         finish = True
@@ -204,6 +211,9 @@ while run:
     all_sprites.draw(window)
     if not finish: 
         all_sprites.update()
+        collide_list = sprite.groupcollide(bullets, walls, True,False, sprite.collide_mask)
+        collide_list = sprite.groupcollide(bullets, enemys, True,True, sprite.collide_mask)
+
     if finish:
         window.blit(game_over_text, (300, 300))
     display.update()
